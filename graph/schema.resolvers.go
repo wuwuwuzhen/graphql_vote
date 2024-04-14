@@ -57,12 +57,25 @@ func (r *mutationResolver) Vote(ctx context.Context, usernames []string, ticket 
 
 // Query is the resolver for the query field.
 func (r *queryResolver) Query(ctx context.Context, username string) (int, error) {
-	panic(fmt.Errorf("not implemented: Query - query"))
+	count, err := redis_dal.GetVote(ctx, username)
+	if err == nil {
+		return int(count), nil
+	}
+	count, err = mysql_dal.QueryVote(ctx, username)
+	if err != nil {
+		return 0, err
+	}
+	_ = redis_dal.SetVote(ctx, username, count)
+	return int(count), nil
 }
 
 // Cas is the resolver for the cas field.
 func (r *queryResolver) Cas(ctx context.Context) (string, error) {
-	panic(fmt.Errorf("not implemented: Cas - cas"))
+	ticket, err := redis_dal.GetTicket(ctx)
+	if err != nil {
+		return "", err
+	}
+	return ticket, nil
 }
 
 // Mutation returns MutationResolver implementation.
