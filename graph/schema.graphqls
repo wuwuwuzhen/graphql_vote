@@ -7,6 +7,6 @@ type Mutation {
 }
 
 type Query {
-    query_vote(username: String!): Int!
-    get_ticket: String!
+    query(username: String!): Int!
+    cas: String!
 }

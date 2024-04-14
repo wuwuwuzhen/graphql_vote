@@ -51,8 +51,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetTicket func(childComplexity int) int
-		QueryVote func(childComplexity int, username string) int
+		Cas   func(childComplexity int) int
+		Query func(childComplexity int, username string) int
 	}
 }
 
@@ -60,8 +60,8 @@ type MutationResolver interface {
 	Vote(ctx context.Context, usernames []string, ticket string) (string, error)
 }
 type QueryResolver interface {
-	QueryVote(ctx context.Context, username string) (int, error)
-	GetTicket(ctx context.Context) (string, error)
+	Query(ctx context.Context, username string) (int, error)
+	Cas(ctx context.Context) (string, error)
 }
 
 type executableSchema struct {
@@ -95,24 +95,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Vote(childComplexity, args["usernames"].([]string), args["ticket"].(string)), true
 
-	case "Query.get_ticket":
-		if e.complexity.Query.GetTicket == nil {
+	case "Query.cas":
+		if e.complexity.Query.Cas == nil {
 			break
 		}
 
-		return e.complexity.Query.GetTicket(childComplexity), true
+		return e.complexity.Query.Cas(childComplexity), true
 
-	case "Query.query_vote":
-		if e.complexity.Query.QueryVote == nil {
+	case "Query.query":
+		if e.complexity.Query.Query == nil {
 			break
 		}
 
-		args, err := ec.field_Query_query_vote_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_query_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.QueryVote(childComplexity, args["username"].(string)), true
+		return e.complexity.Query.Query(childComplexity, args["username"].(string)), true
 
 	}
 	return 0, false
@@ -276,7 +276,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_query_vote_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_query_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -384,8 +384,8 @@ func (ec *executionContext) fieldContext_Mutation_vote(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_query_vote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_query_vote(ctx, field)
+func (ec *executionContext) _Query_query(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_query(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -398,7 +398,7 @@ func (ec *executionContext) _Query_query_vote(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().QueryVote(rctx, fc.Args["username"].(string))
+		return ec.resolvers.Query().Query(rctx, fc.Args["username"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -415,7 +415,7 @@ func (ec *executionContext) _Query_query_vote(ctx context.Context, field graphql
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_query_vote(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_query(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -432,15 +432,15 @@ func (ec *executionContext) fieldContext_Query_query_vote(ctx context.Context, f
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_query_vote_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_query_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_get_ticket(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_get_ticket(ctx, field)
+func (ec *executionContext) _Query_cas(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_cas(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -453,7 +453,7 @@ func (ec *executionContext) _Query_get_ticket(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetTicket(rctx)
+		return ec.resolvers.Query().Cas(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -470,7 +470,7 @@ func (ec *executionContext) _Query_get_ticket(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_get_ticket(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_cas(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2461,7 +2461,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "query_vote":
+		case "query":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2470,7 +2470,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_query_vote(ctx, field)
+				res = ec._Query_query(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -2483,7 +2483,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "get_ticket":
+		case "cas":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -2492,7 +2492,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_get_ticket(ctx, field)
+				res = ec._Query_cas(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

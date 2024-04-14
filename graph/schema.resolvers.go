@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"graphql_vote/biz/dal/mysql_dal"
 	"graphql_vote/biz/dal/redis_dal"
 	"log"
@@ -16,7 +17,7 @@ import (
 func (r *mutationResolver) Vote(ctx context.Context, usernames []string, ticket string) (string, error) {
 	lock := redis_dal.Lock
 	timeout := time.After(1 * time.Second)
-	tick := time.Tick(100 * time.Millisecond) 
+	tick := time.Tick(100 * time.Millisecond)
 	for {
 		select {
 		case <-timeout:
@@ -30,7 +31,7 @@ func (r *mutationResolver) Vote(ctx context.Context, usernames []string, ticket 
 				return "尝试获取锁时发生错误", err
 			case acquire:
 				log.Println("获取到锁")
-				defer lock.Release() 
+				defer lock.Release()
 				curTicket, err := redis_dal.GetTicket(ctx)
 				if err != nil {
 					return "", err
@@ -54,7 +55,31 @@ func (r *mutationResolver) Vote(ctx context.Context, usernames []string, ticket 
 	}
 }
 
-// QueryVote is the resolver for the query_vote field.
+// Query is the resolver for the query field.
+func (r *queryResolver) Query(ctx context.Context, username string) (int, error) {
+	panic(fmt.Errorf("not implemented: Query - query"))
+}
+
+// Cas is the resolver for the cas field.
+func (r *queryResolver) Cas(ctx context.Context) (string, error) {
+	panic(fmt.Errorf("not implemented: Cas - cas"))
+}
+
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+
+// Query returns QueryResolver implementation.
+func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+
+type mutationResolver struct{ *Resolver }
+type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
 func (r *queryResolver) QueryVote(ctx context.Context, username string) (int, error) {
 	count, err := redis_dal.GetVote(ctx, username)
 	if err == nil {
@@ -67,8 +92,6 @@ func (r *queryResolver) QueryVote(ctx context.Context, username string) (int, er
 	_ = redis_dal.SetVote(ctx, username, count)
 	return int(count), nil
 }
-
-// GetTicket is the resolver for the get_ticket field.
 func (r *queryResolver) GetTicket(ctx context.Context) (string, error) {
 	ticket, err := redis_dal.GetTicket(ctx)
 	if err != nil {
@@ -76,12 +99,3 @@ func (r *queryResolver) GetTicket(ctx context.Context) (string, error) {
 	}
 	return ticket, nil
 }
-
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
-
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
-
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
