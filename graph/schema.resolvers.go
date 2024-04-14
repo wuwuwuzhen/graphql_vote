@@ -93,22 +93,3 @@ type queryResolver struct{ *Resolver }
 //   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //     it when you're done.
 //   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) QueryVote(ctx context.Context, username string) (int, error) {
-	count, err := redis_dal.GetVote(ctx, username)
-	if err == nil {
-		return int(count), nil
-	}
-	count, err = mysql_dal.QueryVote(ctx, username)
-	if err != nil {
-		return 0, err
-	}
-	_ = redis_dal.SetVote(ctx, username, count)
-	return int(count), nil
-}
-func (r *queryResolver) GetTicket(ctx context.Context) (string, error) {
-	ticket, err := redis_dal.GetTicket(ctx)
-	if err != nil {
-		return "", err
-	}
-	return ticket, nil
-}
