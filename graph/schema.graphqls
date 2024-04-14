@@ -1,0 +1,12 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type Mutation {
+    vote(usernames: [String!]!, ticket: String!): String!
+}
+
+type Query {
+    query_vote(username: String!): Int!
+    get_ticket: String!
+}
