@@ -20,7 +20,7 @@ func (r *mutationResolver) Vote(ctx context.Context, usernames []string, ticket 
 	for {
 		select {
 		case <-timeout:
-			log.Fatal("未能获取锁，已超时")
+			log.Print("未能获取锁，已超时")
 			return "未能获取锁，已超时", nil
 		case <-tick:
 			acquire, err := lock.AcquireCtx(ctx)
@@ -36,7 +36,7 @@ func (r *mutationResolver) Vote(ctx context.Context, usernames []string, ticket 
 					return "", err
 				}
 				if ticket != curTicket {
-					return "ticket has expired", nil
+					return "ticket 已过期", nil
 				}
 
 				err = mysql_dal.AddVote(ctx, usernames)
