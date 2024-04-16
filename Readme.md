@@ -2,6 +2,20 @@
 
 运行 `go run server.go`
 
+## 遵循GraphQl的接口设计
+
+```type
+type Mutation {
+    vote(usernames: [String!]!, ticket: String!): String!
+}
+
+type Query {
+    query(username: String!): Int!
+    cas: String!
+}
+
+```
+
 ## 分布式生成随机ticket
 
 1. 使用dcron库实现：使用 redis/etcd 同步服务节点列表及存活状态，在节点列表内使用一致性hash，选举可执行任务的节点。
